@@ -7,38 +7,43 @@ import argparse
 from primesense import openni2
 import cv2
 
+MIN_RANGE=150
+MAX_RANGE=2500
+MIN_AREA=5000
+
 def process(depth_array, depth_array_back):
 	depth_array_fore = np.ndarray((frame_depth.height, frame_depth.width), dtype = np.uint16)
 	
-	# background subtraction
+	# sottrazione del background dal frame corrente
 	cv2.absdiff(depth_array, depth_array_back, depth_array_fore)
 
-	# segmentation
-	mask = cv2.inRange(depth_array_fore, 150, 2500)
+	# segmentazione
+	mask = cv2.inRange(depth_array_fore, MIN_RANGE, MAX_RANGE)
+	
+	# copia della maschera appena creata (ci servirà per il passo successivo)		
 	mask1=mask.copy()
 	
-	#find contours	
+	# ricerca dei contorni presenti nella maschera appena creata
+	# si lavora sulla copia della maschera dato che la funzione findContours modifica la sorgente su cui viene applicata 	
 	a, contours, hierarchy = cv2.findContours(mask1, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 	
-	#delete contour with a little area by a mask array
+	# eliminazione, dal vettore contours, dei contorni che hanno area superiore a MIN_AREA (quindi quelli più significativi)
 	for idx, cnt in enumerate(contours):
 		area = cv2.contourArea(cnt)		
-		if (area>5000):
+		if (area>MIN_AREA):
 			contours.pop(idx)	
 	
-	
+	# eliminazione dei contorni rimanenti dalla maschera
 	cv2.drawContours(mask, contours, -1, 0, -1)		
 	
-	#apply the mask to image
+	# applicazione della maschera al frame del foreground
 	depth_array_fore = cv2.bitwise_and(depth_array_fore,depth_array_fore,mask = mask)
 	
-	#find the subject height and the subject position
+	# ricerca dell'altezza e della posizione del soggetto
 	a,height,a,position = cv2.minMaxLoc(depth_array_fore)
 	
 	print "Altezza:" + str(height) + "mm Posizione:" + str(position) + " all'istante:" + str("{:020d}".format(frame_depth.timestamp))
-	
 	cv2.circle(depth_array_fore, position, 10, 65000)
-
 	cv2.imwrite("./Filtered/Filtered_" + str("{:020d}".format(frame_depth.timestamp)) + "a.png", depth_array_fore)		
 	cv2.imshow("Filtered", depth_array_fore)
 	
@@ -57,6 +62,8 @@ def main():
 	global frame_depth
 	frame_depth1 = depth_stream.read_frame()
 	back = frame_depth1.get_buffer_as_uint16()
+	
+	# cattura del primo frame (quello del background)	
 	depth_array_back = np.ndarray((frame_depth1.height, frame_depth1.width), dtype = np.uint16, buffer = back)
 
 	while True:
