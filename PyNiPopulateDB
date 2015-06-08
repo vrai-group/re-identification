@@ -17,7 +17,7 @@ db=MySQLdb.connect(passwd="",db="reidentification",host="127.0.0.1",user="root")
 
 def populate(video_name):
         """
-        Populates reidentification DB
+        Populates Video and Person tables
         """
         #####obtains Video id####################
         # prepare a cursor object using cursor() method
