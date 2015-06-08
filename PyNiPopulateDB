@@ -7,7 +7,7 @@ import argparse
 from primesense import openni2
 import cv2
 import csv
-import string,re
+
 
 # Open database connection
 db=MySQLdb.connect(passwd="",db="reidentification",host="127.0.0.1",user="root")
@@ -15,18 +15,10 @@ db=MySQLdb.connect(passwd="",db="reidentification",host="127.0.0.1",user="root")
 
 
 
-def split(video_path):
+def populate(video_name):
         """
-        Split the ONI file into RGB and depth maps and shows using two separate windows
-        @param video_path: contains the ONI file path
+        Populates reidentification DB
         """
-        openni2.initialize()
-        dev = openni2.Device.open_file(video_path)
-        print (dev.get_sensor_info(openni2.SENSOR_DEPTH))
-        depth_stream = dev.create_depth_stream()
-        color_stream = dev.create_color_stream()
-        depth_stream.start()
-        color_stream.start()
         #####obtains Video id####################
         # prepare a cursor object using cursor() method
         cursor = db.cursor()
@@ -39,7 +31,7 @@ def split(video_path):
         sql = """INSERT INTO VIDEO(VIDEOID,
          VIDEO)
          VALUES (%s, %s)"""
-        data=(videoid,video_path)
+        data=(videoid,video_name)
 
         try:
            # Execute the SQL command
@@ -50,7 +42,7 @@ def split(video_path):
            # Rollback in case there is any error
            db.rollback()
         ###########################################
-        person_id=video_path[:-4]
+        person_id=video_name[:-4]
         ####getting person info #############
         with open('id.csv', 'rb') as gt_file:
                 reader = csv.reader(gt_file,delimiter='\t')
@@ -90,39 +82,15 @@ def split(video_path):
            # Rollback in case there is any error
            db.rollback()
         ###########################################
-
-        while True:
-                frame_depth = depth_stream.read_frame()
-                frame_color = color_stream.read_frame()
-
-                frame_depth_data = frame_depth.get_buffer_as_uint16()
-                frame_color_data = frame_color.get_buffer_as_uint8()
-
-                depth_array = np.ndarray((frame_depth.height, frame_depth.width), dtype = np.uint16, buffer = frame_depth_data)
-                color_array = np.ndarray((frame_color.height, frame_color.width, 3), dtype = np.uint8, buffer = frame_color_data)
-                color_array = cv2.cvtColor(color_array, cv2.COLOR_BGR2RGB)
-
-                cv2.imshow("depth", depth_array)
-                cv2.imshow("color", color_array)
-
-                ch = 0xFF & cv2.waitKey(1)
-                if ch == 27:
-                        break
-
-        depth_stream.stop()
-        color_stream.stop()
-        openni2.unload()
-        cv2.destroyAllWindows()
-        # disconnect from server
         db.close()
 
 
 def main():
         """The entry point"""
         p = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter, description="")
-        p.add_argument('--v', dest = 'video_path', action = 'store', default = '', help = 'path file *.oni')
+        p.add_argument('--v', dest = 'video_name', action = 'store', default = '', help = 'path file *.oni')
         args = p.parse_args()
-        split(args.video_path)
+        populate(args.video_name)
 
 if __name__ == '__main__':
         main()
