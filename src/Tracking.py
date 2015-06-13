@@ -47,7 +47,7 @@ def process(depth_array, depth_array_back):
 	cv2.circle(depth_array_fore, position, 10, 65000)
 	cv2.imwrite("./Filtered/Filtered_" + str("{:020d}".format(frame_depth.timestamp)) + "a.png", depth_array_fore)		
 	cv2.imshow("Filtered", depth_array_fore)
-	return str(height)+";"+str(position[0])+";"+str(position[0])
+	return str(height)+";"+str(position[0])+";"+str(position[1])
 	
 def main():
         """The entry point"""
