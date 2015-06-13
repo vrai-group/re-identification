@@ -25,7 +25,8 @@ def process(depth_array, depth_array_back):
 	
 	# ricerca dei contorni presenti nella maschera appena creata
 	# si lavora sulla copia della maschera dato che la funzione findContours modifica la sorgente su cui viene applicata 	
-	a, contours, hierarchy = cv2.findContours(mask1, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+	#a, contours, hierarchy = cv2.findContours(mask1, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+	contours, hierarchy = cv2.findContours(mask1, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 	
 	# eliminazione, dal vettore contours, dei contorni che hanno area superiore a MIN_AREA (quindi quelli più significativi)
 	for idx, cnt in enumerate(contours):
@@ -46,6 +47,7 @@ def process(depth_array, depth_array_back):
 	cv2.circle(depth_array_fore, position, 10, 65000)
 	cv2.imwrite("./Filtered/Filtered_" + str("{:020d}".format(frame_depth.timestamp)) + "a.png", depth_array_fore)		
 	cv2.imshow("Filtered", depth_array_fore)
+	return str(height)+";"+str(position[0])+";"+str(position[0])
 	
 def main():
         """The entry point"""
@@ -65,13 +67,22 @@ def main():
 	
 	# cattura del primo frame (quello del background)	
 	depth_array_back = np.ndarray((frame_depth1.height, frame_depth1.width), dtype = np.uint16, buffer = back)
-
-	while True:
+	
+	continua = True
+	frameNumber=0;
+	personId=args.video_path.split(".")[0]
+	depth_file = open(args.video_path + ".csv","w")
+	
+	while continua:
                 frame_depth = depth_stream.read_frame()
 		frame_depth_data = frame_depth.get_buffer_as_uint16()
                 depth_array = np.ndarray((frame_depth.height, frame_depth.width), dtype = np.uint16, buffer = frame_depth_data)
-		process(depth_array, depth_array_back)
-		
+		if int(frame_depth.timestamp)==0:
+			continua=False
+		else:
+			frameNumber=frameNumber+1
+			result = process(depth_array, depth_array_back)
+			depth_file.write("VideoId"+";"+str(frameNumber)+";"+personId+";"+result +"\n")
 		ch = 0xFF & cv2.waitKey(1)
                 if ch == 27:
                         break	
