@@ -10,7 +10,7 @@ import cv2
 MIN_RANGE=150
 MAX_RANGE=2500
 MIN_AREA=5000
-HEIGHTMIN=1200
+MIN_HEIGHT=1200
 
 def process(depth_array, depth_array_back):
 	depth_array_fore = np.ndarray((frame_depth.height, frame_depth.width), dtype = np.uint16)
@@ -37,13 +37,16 @@ def process(depth_array, depth_array_back):
 	# eliminazione dei contorni rimanenti dalla maschera
 	cv2.drawContours(mask, contours, -1, 0, -1)		
 	
+	#eliminazione del rumore tramite l'operazione morfologica di chiusura
+	kernel = np.ones((5,5),np.uint8)
+	mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
+	
 	# applicazione della maschera al frame del foreground
 	depth_array_fore = cv2.bitwise_and(depth_array_fore,depth_array_fore,mask = mask)
 	masked = cv2.bitwise_and(depth_array_fore,depth_array_fore,mask = mask)
 	# ricerca dell'altezza e della posizione del soggetto
 	_,height,_,position = cv2.minMaxLoc(depth_array_fore)
 	
-	#print "Altezza:" + str(height) + "mm Posizione:" + str(position) + " all'istante:" + str("{:020d}".format(frame_depth.timestamp))
 	cv2.circle(depth_array_fore, position, 10, 65000)
 	cv2.imwrite("./Filtered/Filtered_" + str("{:020d}".format(frame_depth.timestamp)) + "a.png", depth_array_fore)		
 	cv2.imshow("Filtered", depth_array_fore)
@@ -81,8 +84,6 @@ def main():
 	
 	# cattura del primo frame (quello del background)	
 	depth_array_back = np.ndarray((frame_depth0.height, frame_depth0.width), dtype = np.uint16, buffer = frame_depth_data)
-	color_array_back = np.ndarray((frame_color0.height, frame_color0.width, 3), dtype = np.uint8, buffer = frame_color_data)
-	color_array_back = cv2.cvtColor(color_array_back, cv2.COLOR_BGR2RGB)
     
 	continua = True
 	frameNumber=0;	
@@ -109,7 +110,7 @@ def main():
 			#masked_depth_frame viene scalato perché imshow lavora con 8 bit
 			cv2.imshow("Depth", depth_array/10000.)
 			cv2.imshow("Color",color_array)
-			if (height>HEIGHTMIN):
+			if (height>MIN_HEIGHT):
 				cmask+=1				
 				os.chdir("mask")
 				cv2.imwrite(str(cmask)+".png",mask)
