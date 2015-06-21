@@ -48,7 +48,6 @@ def process(depth_array, depth_array_back):
 	_,height,_,position = cv2.minMaxLoc(depth_array_fore)
 	
 	cv2.circle(depth_array_fore, position, 10, 65000)
-	cv2.imwrite("./Filtered/Filtered_" + str("{:020d}".format(frame_depth.timestamp)) + "a.png", depth_array_fore)		
 	cv2.imshow("Filtered", depth_array_fore)
 	return mask, height
 	
