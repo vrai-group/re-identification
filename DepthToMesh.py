@@ -11,6 +11,7 @@ OUTDIR = "mesh"
 DEPTHDIR = "depthROI"
 EXT1 = ".png"
 EXT2 = ".ply"
+EXT3 = ".pcd"
 
 def cvtDepthTo3DPoints(m, scale_factor):
 	H, W = m.shape
@@ -46,7 +47,9 @@ def main():
 		
 		os.chdir(OUTDIR)
 		pcl.save(pointcloud, str(i) + EXT2)
-		print "Converting " + str(i) + ".png"
+		pointcloud.to_file(str(i) + EXT3)
+		
+		print "Converting " + str(i) + ".png" + "into " + str(i) + ".pcd"
 		os.chdir("..")
 		
 		i+=1
