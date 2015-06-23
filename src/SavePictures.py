@@ -17,7 +17,6 @@ DIR2="depth"
 DIR3="mask"
 
 def extractMask(depth_array_fore):
-
 	#segmentazione della maschera
 	mask = cv2.inRange(depth_array_fore, MIN_RANGE, MAX_RANGE)
 	
@@ -39,16 +38,14 @@ def extractMask(depth_array_fore):
 	return mask
 
 def getMaxHeight(depth, mask):
-
 	#applicazione della maschera, così si è certi che il massimo venga
-	#trovato sopra al soggetto
+	#trovato nell'area desiderata
 	masked = cv2.bitwise_and(depth,depth,mask = mask)
 	_,h,_,pos = cv2.minMaxLoc(masked)
 	
 	return h, pos[0], pos[1]
 
 def main():
-
 	p = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter, description="")
 	p.add_argument('--v', dest = 'video_path', action = 'store', default = '', help = 'path file *.oni')
 	args = p.parse_args()
@@ -81,7 +78,7 @@ def main():
 	frame_count = 0
 	
 	while (t_curr > t_prev):
-		#acquisizione degli array relativi ai frame da stream RGB e Depth
+		#acquisizione degli array relativi ai frame dagli stream RGB e Depth
 		frame_depth = depth_stream.read_frame()
 		frame_color = color_stream.read_frame()
 		#conversione di tipo
@@ -112,9 +109,8 @@ def main():
 		mask = extractMask(depth_array_fore)
 
 		h, x, y = getMaxHeight(depth_array_fore, mask)
-		#se il punto ad altezza massima nel frame depth è maggiore della soglia, si salvano le immagini
+		#se l'altezza massima nel frame depth è maggiore della soglia, si salvano le immagini
 		if (h>MIN_HEIGHT):
-				print str(h)
 				i+=1				
 				os.chdir(DIR1)
 				cv2.imwrite(str(i)+".png",color_array)
