@@ -95,7 +95,7 @@ def main():
 		t_curr = frame_depth.timestamp
 		
 		cv2.imshow("RGB", color_array)
-		cv2.imshow("Depth", color_array)
+		cv2.imshow("Depth", depth_array)
 		
 		#se il frame è il primo, può essere preso come background del canale depth
 		if frame_count == 1:
