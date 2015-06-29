@@ -1,6 +1,7 @@
 #!/bin/bash
-#script creato per ridurre del 30% le immagini gelle cartelle deph, mask e img
-#è un semplice script da console ricordo di lanciare il comando chmod a+x script.sh per rendere il programma eseguibile da console
+#script creato per ridurre il numero di file delle cartelle deph, mask e img
+#è un semplice script da terminale;
+#ricordo di lanciare il comando chmod a+x script.sh per rendere il programma eseguibile da console
 #le nuove immagni verrano salvate nelle cartelle deph2, img2 e mask2 per controlalre il risultato
 #configurazione
 i=1
