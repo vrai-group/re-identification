@@ -4,12 +4,12 @@
 #le nuove immagni verrano salvate nelle cartelle deph2, img2 e mask2 per controlalre il risultato
 i=0
 #numero del file di partenza
-file=10
+file=4
 molt=3
 mkdir depth2
 mkdir img2
 mkdir mask2
-for X in $(seq 50)
+for X in $(seq 60)
 do
 	let "file = file + molt"
 	let "i = i + 1"
