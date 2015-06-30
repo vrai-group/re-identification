@@ -11,10 +11,32 @@ MIN_RANGE=150
 MAX_RANGE=2500
 MIN_AREA=5000
 MIN_HEIGHT=1200
+N_ITER=5
 
 DIR1="img"
 DIR2="depth"
 DIR3="mask"
+DIR4="depth_corr" #i frame depth corretti vengono usati dallo script DepthToMesh
+
+def removeBlackPixels(depth):
+	
+	#vengono realizzate delle operazioni morfologiche che distorcendo in
+	#parte il depth frame, eliminano i pixel neri
+	kernel = np.ones((5,5),np.uint8)
+	depth_dil = cv2.dilate(depth,kernel,iterations = N_ITER)
+	depth_er = cv2.erode(depth_dil,kernel,iterations = N_ITER)
+	
+	#creazione di una maschera che avrà valore 1 in corrispondenza dei pixel 
+	#neri, e zero in corrispondenza di quelli di diverso colore
+	mask = cv2.inRange(depth.copy(), 0, 1)
+	
+	#applicazione della maschera al depth frame 
+	depth_er = cv2.bitwise_and(depth_er,depth_er,mask=mask)
+	
+	#il depth frame viene corretto "riempendo" i pixel neri
+	depth = depth + depth_er
+	
+	return depth
 
 def extractMask(depth_array_fore):
 	#segmentazione della maschera
@@ -60,6 +82,9 @@ def main():
 	if not os.path.isdir(DIR3):
 		os.mkdir(DIR3)	
 		
+	if not os.path.isdir(DIR4):
+		os.mkdir(DIR4)
+		
 	#inizializzazione di OpenNI e apertura degli stream video	
 	openni2.initialize()
 	dev = openni2.Device.open_file(args.video_path)
@@ -101,9 +126,12 @@ def main():
 		if frame_count == 1:
 			depth_array_back = np.ndarray((frame_depth.height, frame_depth.width), dtype = np.uint16, buffer = frame_depth_data)
 			depth_array_back = depth_array
-
+		
+		#eliminazione delle aree nere dal depth frame dovute ad errori del sensore di profondità
+		depth_array_clean = removeBlackPixels(depth_array)
+		
 		#si ottiene il foreground togliendo il background al frame corrente
-		depth_array_fore = cv2.absdiff(depth_array, depth_array_back)
+		depth_array_fore = cv2.absdiff(depth_array_clean, depth_array_back)
 
 		#estrazione della maschera dal depth foreground
 		mask = extractMask(depth_array_fore)
@@ -120,6 +148,9 @@ def main():
 				os.chdir("..")
 				os.chdir(DIR3)
 				cv2.imwrite(str(i)+".png",mask)
+				os.chdir("..")
+				os.chdir(DIR4)
+				cv2.imwrite(str(i)+".png",depth_array_clean)
 				os.chdir("..")
 				
 		ch = 0xFF & cv2.waitKey(1)
