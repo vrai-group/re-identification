@@ -15,6 +15,10 @@ N_ITER = 5
 
 EXT = ".csv"
 
+strgid="PersonID_"
+VideoId="VideoId"
+
+
 def removeBlackPixels(depth):
 	
 	#vengono realizzate delle operazioni morfologiche che distorcendo in
@@ -81,12 +85,11 @@ def main():
 	color_stream.start()
 	
 	#estrazione dell'id della persona dal nome del file .oni
-	person_id=args.video_path.split(".")[0]
-	
+	VideoId="VideoId_"+args.video_path.split(".")[0]
 	#file con i punti ad altezza massima dei frame contenenti il soggetto
-	tracking_file_subj = open(person_id + "_subj" + EXT,"w")
+	tracking_file_subj = open(VideoId + "_subj" + EXT,"w")
 	#file con i punti ad altezza massima di tutti i frame del video
-	tracking_file_all = open(person_id + "_all" + EXT,"w")
+	tracking_file_all = open(VideoId + "_all" + EXT,"w")
     
 	#contiene il timestamp del frame precedente
 	t_prev = -2
@@ -96,6 +99,11 @@ def main():
 	i = 0
 	#indice che conta i frame aperti dallo stream video
 	frame_count = 0
+	
+	#variabile gestione ultime mod
+	ultimopassaggio=0
+	newid=True
+	contperid=0
 	
 	while (t_curr > t_prev):
 		#acquisizione degli array relativi ai frame dallo stream RGB e Depth
@@ -133,12 +141,29 @@ def main():
 
 		#se il punto ad altezza massima nel frame depth è maggiore della soglia, si salvano le immagini
 		if (h>MIN_HEIGHT):
+			#gestione più persone
+			if (newid==True):
+				contperid+=1
+				newid=False
+			
+			
 			cv2.circle(depth_array,tuple((x,y)), 5, 65536, thickness=1)
-			line_to_write = "VideoId"+","+str(frame_count)+","+person_id+","+str(h)+","+str(x)+","+str(y)+"\n"
+			
+			line_to_write = VideoId+","+ strgid + str(contperid)+","+str(frame_count)+","+str(h)+","+str(x)+","+str(y)+"\n"
+			#print line_to_write
 			tracking_file_all.write(line_to_write)
-			i+=1				
 			tracking_file_subj.write(line_to_write)
+			
 			cv2.circle(depth_array,tuple((x,y)), 5, 65536, thickness=7)
+			ultimopassaggio=frame_count+3 #3 indica quanti frame devono passare dopo il passaggio dell'ultima persona
+			
+		else:
+			line_to_write =  VideoId+","+ "NULL"+","+ "NULL"+","+ "NULL"+","+ "NULL"+","+ "NULL"+"\n"
+			#print line_to_write
+			tracking_file_all.write(line_to_write)
+			#gestione multipersone
+			if (frame_count>ultimopassaggio):
+				newid=True;
 		
 		cv2.imshow("RGB", color_array)
 		cv2.imshow("Depth", depth_array)
