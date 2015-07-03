@@ -18,7 +18,7 @@ DIR2="depth"
 DIR3="mask"
 DIR4="depth_corr" #i frame depth corretti vengono usati dallo script DepthToMesh
 
-skip=10 #salto dei frame
+skip=5 #salto dei frame
 
 def removeBlackPixels(depth):
 	
@@ -128,7 +128,7 @@ def main():
 			color_array = np.ndarray((frame_color.height, frame_color.width, 3), dtype = np.uint8, buffer = frame_color_data)
 			color_array = cv2.cvtColor(color_array, cv2.COLOR_BGR2RGB)
 			
-			cv2.imshow("RGB", color_array)
+			#cv2.imshow("RGB", color_array)
 			#cv2.imshow("Depth", depth_array)
 			
 			#se il frame è il primo, può essere preso come background del canale depth

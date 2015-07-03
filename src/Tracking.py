@@ -15,8 +15,6 @@ N_ITER = 5
 
 EXT = ".csv"
 
-strgid="PersonID_"
-VideoId="VideoId"
 
 
 def removeBlackPixels(depth):
@@ -85,11 +83,11 @@ def main():
 	color_stream.start()
 	
 	#estrazione dell'id della persona dal nome del file .oni
-	VideoId="VideoId_"+args.video_path.split(".")[0]
+	VideoId=args.video_path.split(".")[0]
 	#file con i punti ad altezza massima dei frame contenenti il soggetto
-	tracking_file_subj = open(VideoId + "_subj" + EXT,"w")
+	tracking_file_color = open(VideoId + "_color" + EXT,"w")
 	#file con i punti ad altezza massima di tutti i frame del video
-	tracking_file_all = open(VideoId + "_all" + EXT,"w")
+	tracking_file_all = open(VideoId + "_depth" + EXT,"w")
     
 	#contiene il timestamp del frame precedente
 	t_prev = -2
@@ -105,7 +103,7 @@ def main():
 	newid=True
 	contperid=0
 	
-	while (t_curr > t_prev):
+	while (True):
 		#acquisizione degli array relativi ai frame dallo stream RGB e Depth
 		frame_depth = depth_stream.read_frame()
 		frame_color = color_stream.read_frame()
@@ -118,9 +116,11 @@ def main():
 		color_array = cv2.cvtColor(color_array, cv2.COLOR_BGR2RGB)
 		frame_count += 1
 		
-		#aggiornamento dei timestamp		
+		#aggiornamento dei timestamp
 		t_prev = t_curr
-		t_curr = frame_depth.timestamp
+		t_curr = frame_color.timestamp
+		if (t_curr < t_prev):
+			break
 		
 		#se il frame è il primo, può essere preso come background del canale depth
 		if frame_count == 1:
@@ -149,30 +149,35 @@ def main():
 			
 			cv2.circle(depth_array,tuple((x,y)), 5, 65536, thickness=1)
 			
-			line_to_write = VideoId+","+ strgid + str(contperid)+","+str(frame_count)+","+str(h)+","+str(x)+","+str(y)+"\n"
-			#print line_to_write
+			line_to_write = VideoId+";"+  str("{:03d}".format(contperid)) +";"+str(frame_count)+";"+str(frame_depth.timestamp)+";"+str(h)+";"+str(x)+";"+str(y)+"\n"
+			print line_to_write
 			tracking_file_all.write(line_to_write)
-			tracking_file_subj.write(line_to_write)
+			line_to_write_color = VideoId+";"+ str("{:03d}".format(contperid))+";"+str(frame_count)+";"+str(frame_color.timestamp)+"\n"
+			tracking_file_color.write(line_to_write_color)
 			
 			cv2.circle(depth_array,tuple((x,y)), 5, 65536, thickness=7)
 			ultimopassaggio=frame_count+3 #3 indica quanti frame devono passare dopo il passaggio dell'ultima persona
 			
 		else:
-			line_to_write =  VideoId+","+ "NULL"+","+ "NULL"+","+ "NULL"+","+ "NULL"+","+ "NULL"+"\n"
-			#print line_to_write
+			line_to_write =  VideoId+";"+ "NULL"+";"+ str(frame_count)+";"+str(frame_depth.timestamp)+";"+ "NULL"+";"+ "NULL"+";"+ "NULL"+"\n"
+			print line_to_write
+			
+
 			tracking_file_all.write(line_to_write)
+			line_to_write_color = VideoId+";"+ "NULL" +";"+str(frame_count)+";"+str(frame_color.timestamp)+"\n"
+			tracking_file_color.write(line_to_write_color)
 			#gestione multipersone
 			if (frame_count>ultimopassaggio):
 				newid=True;
 		
-		cv2.imshow("RGB", color_array)
+		#cv2.imshow("RGB", color_array)
 		cv2.imshow("Depth", depth_array)
 			
 		ch = 0xFF & cv2.waitKey(1)
 		if ch == 27:
 			break	
 	
-	tracking_file_subj.close()
+	tracking_file_color.close()
 	tracking_file_all.close()
 	depth_stream.stop()
 	color_stream.stop()
