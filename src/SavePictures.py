@@ -18,6 +18,8 @@ DIR2="depth"
 DIR3="mask"
 DIR4="depth_corr" #i frame depth corretti vengono usati dallo script DepthToMesh
 
+skip=10 #salto dei frame
+
 def removeBlackPixels(depth):
 	
 	#vengono realizzate delle operazioni morfologiche che distorcendo in
@@ -106,39 +108,44 @@ def main():
 		#acquisizione degli array relativi ai frame dagli stream RGB e Depth
 		frame_depth = depth_stream.read_frame()
 		frame_color = color_stream.read_frame()
-		#conversione di tipo
-		frame_depth_data = frame_depth.get_buffer_as_uint16()
-		frame_color_data = frame_color.get_buffer_as_uint8()
-		#conversione degli array in un formato utilizzabile da OpenCV
-		depth_array = np.ndarray((frame_depth.height, frame_depth.width), dtype = np.uint16, buffer = frame_depth_data)
-		color_array = np.ndarray((frame_color.height, frame_color.width, 3), dtype = np.uint8, buffer = frame_color_data)
-		color_array = cv2.cvtColor(color_array, cv2.COLOR_BGR2RGB)
-		frame_count += 1
 		
 		#aggiornamento dei timestamp		
 		t_prev = t_curr
 		t_curr = frame_depth.timestamp
 		
-		cv2.imshow("RGB", color_array)
-		cv2.imshow("Depth", depth_array)
+		frame_count += 1
 		
-		#se il frame è il primo, può essere preso come background del canale depth
-		if frame_count == 1:
-			depth_array_back = np.ndarray((frame_depth.height, frame_depth.width), dtype = np.uint16, buffer = frame_depth_data)
-			depth_array_back = depth_array
-		
-		#eliminazione delle aree nere dal depth frame dovute ad errori del sensore di profondità
-		depth_array_clean = removeBlackPixels(depth_array)
-		
-		#si ottiene il foreground togliendo il background al frame corrente
-		depth_array_fore = cv2.absdiff(depth_array_clean, depth_array_back)
-
-		#estrazione della maschera dal depth foreground
-		mask = extractMask(depth_array_fore)
-
-		h, x, y = getMaxHeight(depth_array_fore, mask)
-		#se l'altezza massima nel frame depth è maggiore della soglia, si salvano le immagini
-		if (h>MIN_HEIGHT):
+		if frame_count % skip == 1:
+			
+			
+			print frame_count
+			
+			#conversione di tipo
+			frame_depth_data = frame_depth.get_buffer_as_uint16()
+			frame_color_data = frame_color.get_buffer_as_uint8()
+			#conversione degli array in un formato utilizzabile da OpenCV
+			depth_array = np.ndarray((frame_depth.height, frame_depth.width), dtype = np.uint16, buffer = frame_depth_data)
+			color_array = np.ndarray((frame_color.height, frame_color.width, 3), dtype = np.uint8, buffer = frame_color_data)
+			color_array = cv2.cvtColor(color_array, cv2.COLOR_BGR2RGB)
+			
+			cv2.imshow("RGB", color_array)
+			#cv2.imshow("Depth", depth_array)
+			
+			#se il frame è il primo, può essere preso come background del canale depth
+			if frame_count == 1:
+				depth_array_back = np.ndarray((frame_depth.height, frame_depth.width), dtype = np.uint16, buffer = frame_depth_data)
+				depth_array_back = depth_array
+			
+			#eliminazione delle aree nere dal depth frame dovute ad errori del sensore di profondità
+			depth_array_clean = removeBlackPixels(depth_array)
+			
+			#si ottiene il foreground togliendo il background al frame corrente
+			depth_array_fore = cv2.absdiff(depth_array_clean, depth_array_back)
+			#estrazione della maschera dal depth foreground
+			mask = extractMask(depth_array_fore)
+			h, x, y = getMaxHeight(depth_array_fore, mask)
+			#se l'altezza massima nel frame depth è maggiore della soglia, si salvano le immagini
+			if (h>MIN_HEIGHT):
 				i+=1				
 				os.chdir(DIR1)
 				cv2.imwrite(str(i)+".png",color_array)
@@ -153,9 +160,9 @@ def main():
 				cv2.imwrite(str(i)+".png",depth_array_clean)
 				os.chdir("..")
 				
-		ch = 0xFF & cv2.waitKey(1)
-		if ch == 27:
-			break	
+			ch = 0xFF & cv2.waitKey(1)
+			if ch == 27:
+				break	
 	
 	depth_stream.stop()
 	color_stream.stop()
