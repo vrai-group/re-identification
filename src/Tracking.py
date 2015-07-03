@@ -11,8 +11,29 @@ MIN_RANGE=150
 MAX_RANGE=2500
 MIN_AREA=5000
 MIN_HEIGHT=1200
+N_ITER = 5
 
 EXT = ".csv"
+
+def removeBlackPixels(depth):
+	
+	#vengono realizzate delle operazioni morfologiche che distorcendo in
+	#parte il depth frame, eliminano i pixel neri
+	kernel = np.ones((5,5),np.uint8)
+	depth_dil = cv2.dilate(depth,kernel,iterations = N_ITER)
+	depth_er = cv2.erode(depth_dil,kernel,iterations = N_ITER)
+	
+	#creazione di una maschera che avrà valore 1 in corrispondenza dei pixel 
+	#neri, e zero in corrispondenza di quelli di diverso colore
+	mask = cv2.inRange(depth.copy(), 0, 1)
+	
+	#applicazione della maschera al depth frame 
+	depth_er = cv2.bitwise_and(depth_er,depth_er,mask=mask)
+	
+	#il depth frame viene corretto "riempendo" i pixel neri
+	depth = depth + depth_er
+	
+	return depth
 
 def extractMask(depth_array_fore):
 
@@ -97,7 +118,10 @@ def main():
 		if frame_count == 1:
 			depth_array_back = np.ndarray((frame_depth.height, frame_depth.width), dtype = np.uint16, buffer = frame_depth_data)
 			depth_array_back = depth_array
+			depth_array_back = removeBlackPixels(depth_array_back)
 
+		depth_array = removeBlackPixels(depth_array)
+		
 		#si ottiene il foreground togliendo il background al frame corrente. Non c'è bisogno di eliminare i pixel neri
 		#dal depth frame, poichè la massima altezza viene comunque rilevata correttamente.
 		depth_array_fore = cv2.absdiff(depth_array, depth_array_back)
@@ -107,16 +131,14 @@ def main():
 
 		h, x, y = getMaxHeight(depth_array_fore, mask)
 
-		cv2.circle(depth_array,tuple((x,y)), 5, 65536, thickness=1)
-		
-		line_to_write = "VideoId"+","+str(frame_count)+","+person_id+","+str(h)+","+str(x)+","+str(y)+"\n"
-		tracking_file_all.write(line_to_write)		
-		
 		#se il punto ad altezza massima nel frame depth è maggiore della soglia, si salvano le immagini
 		if (h>MIN_HEIGHT):
-				i+=1				
-				tracking_file_subj.write(line_to_write)
-				cv2.circle(depth_array,tuple((x,y)), 5, 65536, thickness=7)
+			cv2.circle(depth_array,tuple((x,y)), 5, 65536, thickness=1)
+			line_to_write = "VideoId"+","+str(frame_count)+","+person_id+","+str(h)+","+str(x)+","+str(y)+"\n"
+			tracking_file_all.write(line_to_write)
+			i+=1				
+			tracking_file_subj.write(line_to_write)
+			cv2.circle(depth_array,tuple((x,y)), 5, 65536, thickness=7)
 		
 		cv2.imshow("RGB", color_array)
 		cv2.imshow("Depth", depth_array)
