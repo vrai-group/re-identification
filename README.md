@@ -8,6 +8,6 @@ $ git clone https://github.com/vrai-group/re-identification.git
 ```
 Run the follow python script for people tracking. It creates two csv files with all information about the oni file.
 ```sh
-$ python2 src/Tracking.py --v video_path.oni
+$ python2 src/tracking/tracking.py --v video.oni
 ```
 You can find some example of csv files on ```csv-test``` directory.
