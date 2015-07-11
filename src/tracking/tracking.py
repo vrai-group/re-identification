@@ -130,8 +130,6 @@ def main():
 
 		depth_array = removeBlackPixels(depth_array)
 		
-		#si ottiene il foreground togliendo il background al frame corrente. Non c'è bisogno di eliminare i pixel neri
-		#dal depth frame, poichè la massima altezza viene comunque rilevata correttamente.
 		depth_array_fore = cv2.absdiff(depth_array, depth_array_back)
 
 		#estrazione della maschera dal depth foreground
