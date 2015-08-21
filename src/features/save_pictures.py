@@ -35,7 +35,7 @@ def removeBlackPixels(depth):
 	#applicazione della maschera al depth frame 
 	depth_er = cv2.bitwise_and(depth_er,depth_er,mask=mask)
 	
-	#il depth frame viene corretto "riempendo" i pixel neri
+	#il depth frame viene corretto "riempiendo" i pixel neri
 	depth = depth + depth_er
 	
 	return depth
